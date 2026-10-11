@@ -1,0 +1,40 @@
+# --- Runtime data -------------------------------------------------------------
+# The SQLite database is created and seeded on first launch. It holds players'
+# accounts and progress, so it must not be committed.
+vasuki.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# --- Python -------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# --- Virtual environments (run.bat creates .venv) -----------------------------
+.venv/
+venv/
+env/
+
+# --- Secrets / local config ---------------------------------------------------
+.env
+.env.*
+!.env.example
+
+# --- Editors and OS files -----------------------------------------------------
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Tooling artefacts ----------------------------------------------------------
+# Browser-test screenshots / logs
+.playwright-mcp/
+*.log

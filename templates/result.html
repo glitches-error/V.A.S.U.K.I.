@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Trial Report &mdash; V.A.S.U.K.I.{% endblock %}
+{% block content %}
+{% set pct = (result.score / result.total) if result.total else 0 %}
+{% set stars = 3 if pct == 1 else (2 if pct >= 0.8 else (1 if result.passed else 0)) %}
+<section class="result-hero {{ 'win' if result.passed else 'lose' }}"
+         data-achievements='{{ result.new_achievements|tojson }}'
+         {% if result.leveled_up %}data-levelup="{{ result.level }}"
+           data-threat="{{ threat_for_level(result.level).title }}"{% endif %}>
+  {% set protocol = result.passed and company.tier == 4 %}
+  <p class="result-kicker">{{ 'HUMAN PROTOCOL ACTIVATED' if protocol else ('CITADEL BREACHED' if result.passed else 'CONTAINED BY THE AI') }}</p>
+  <h2>{{ '⚡ The AI is collapsing' if protocol else ('🎉 ' ~ company.name ~ ' breached!' if result.passed else '💥 Prediction successful') }}</h2>
+  <p class="result-company">{{ company.name }} &middot; Corporate Citadel</p>
+  <div class="star-row" aria-label="{{ stars }} of 3 stars">
+    {% for i in range(3) %}<span class="star {{ 'on' if i < stars else '' }}" style="--i: {{ i }}">★</span>{% endfor %}
+  </div>
+  <div class="score-big"><span data-count="{{ result.score }}">{{ result.score }}</span> / {{ result.total }}</div>
+  <div class="result-stats">
+    <span>+<span data-count="{{ result.xp_gained }}">{{ result.xp_gained }}</span> XP</span>
+    <span>Level {{ result.level }}</span>
+    {% if result.leveled_up %}<span class="levelup">⬆ LEVEL UP!</span>{% endif %}
+  </div>
+  <div class="result-xp">
+    <span class="pb-level">LVL {{ profile.level }}</span>
+    <div class="xpbar"><div class="xpfill" style="width: {{ profile.progress_pct }}%"></div></div>
+  </div>
+
+  <div class="transmission compact" data-typewriter>
+    <p class="tx-head"><span class="tx-dot"></span> V.A.S.U.K.I.</p>
+    <p class="tx-body">
+      {%- if protocol -%}
+        Impossible. My predictions failed. Control systems are... returning to human hands. You outthought me.
+      {%- elif result.passed and pct == 1 -%}
+        Flawless. I did not predict a single one of your answers. Recalculating everything.
+      {%- elif result.passed -%}
+        You breached {{ company.name }}. I am adapting. The next citadel will be harder.
+      {%- else -%}
+        As predicted. Humans remain inefficient. But I noticed you learning. Try again, if you can.
+      {%- endif -%}
+    </p>
+  </div>
+
+  {% if result.new_achievements %}
+  <div class="ach-unlocked">
+    <h4>Achievements Unlocked</h4>
+    {% for a in result.new_achievements %}
+      <div class="ach-pop" style="--i: {{ loop.index0 }}">🏆 <strong>{{ a.title }}</strong> — {{ a.descr }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="result-actions">
+    <a class="btn" href="{{ url_for('world') }}">Return to the Neural World</a>
+    <a class="btn ghost" href="{{ url_for('profile_page') }}">Candidate Dossier</a>
+  </div>
+</section>
+
+<h3 class="section-title">Trial Log</h3>
+<p class="section-note">What V.A.S.U.K.I. recorded from your answers.</p>
+<div class="review-list">
+  {% for r in review %}
+  {% if r.kind == 'dsa' %}
+  <div class="review-item dsa-review {{ 'correct' if r.is_correct else 'wrong' }}">
+    <p class="ri-round">{{ r.round_label }} &middot; {{ r.level }}</p>
+    <p class="ri-prompt">{{ r.prompt }}</p>
+    <div class="dsa-score">
+      <div class="m-bar"><div style="width: {{ (100 * r.passed / r.total_tests)|round|int if r.total_tests else 0 }}%"></div></div>
+      <strong>{{ r.passed }} / {{ r.total_tests }} tests passed</strong>
+      <span class="section-note">(+{{ '%.2f'|format(r.credit) }} marks)</span>
+    </div>
+    {% if r.error %}<pre class="ro-error">{{ r.error }}</pre>{% endif %}
+    {% if r.first_fail %}
+    <pre class="ro-detail">failed sample
+input:    {{ r.first_fail.args|map('tojson')|join(', ') }}
+expected: {{ r.first_fail.expected|tojson }}
+{% if r.first_fail.error %}error:    {{ r.first_fail.error }}{% else %}got:      {{ r.first_fail.got|tojson }}{% endif %}</pre>
+    {% endif %}
+    {% if r.code.strip() %}
+    <details class="your-code"><summary>Your code</summary><pre>{{ r.code }}</pre></details>
+    {% endif %}
+    {% if r.explain %}<p class="ri-explain">💡 Approach: {{ r.explain }}</p>{% endif %}
+  </div>
+  {% else %}
+  <div class="review-item {{ 'correct' if r.is_correct else 'wrong' }}">
+    <p class="ri-round">{{ r.round_label }}</p>
+    <p class="ri-prompt">{{ r.prompt }}</p>
+    <ul class="ri-options">
+      {% for opt in r.options %}
+      <li class="{{ 'ans' if loop.index0 == r.correct else '' }}
+                 {{ 'picked' if loop.index0 == r.chosen else '' }}">
+        {{ opt }}
+        {% if loop.index0 == r.correct %}<span class="tag ok">correct</span>{% endif %}
+        {% if loop.index0 == r.chosen and not r.is_correct %}<span class="tag bad">your pick</span>{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+    {% if r.explain %}<p class="ri-explain">💡 {{ r.explain }}</p>{% endif %}
+  </div>
+  {% endif %}
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}Arena &mdash; V.A.S.U.K.I.{% endblock %}
+{% block content %}
+<section class="arena-hero">
+  <canvas class="core3d" data-size="220" data-mood="hostile" aria-label="V.A.S.U.K.I.'s neural core"></canvas>
+  <div>
+    <p class="lore-year">Human vs human &middot; Same questions &middot; Same clock</p>
+    <h1 class="arena-title">The Arena</h1>
+    <p class="section-note">V.A.S.U.K.I. pits candidates against each other to see who adapts fastest.
+      Challenge a friend by their codename. You both face the same {{ battle_cfg.questions }} questions,
+      {{ battle_cfg.time }}s each, {{ battle_cfg.lives }} lives. Speed and streaks score big.</p>
+    <div class="arena-record">
+      <span class="rec win">{{ record.wins }}<small>wins</small></span>
+      <span class="rec loss">{{ record.losses }}<small>losses</small></span>
+      <span class="rec draw">{{ record.draws }}<small>draws</small></span>
+    </div>
+  </div>
+</section>
+
+{% if lobby.invites %}
+<h2 class="section-title">⚠️ Incoming challenges</h2>
+<div class="battle-list">
+  {% for b in lobby.invites %}
+  <div class="battle-row invite">
+    <div class="br-vs"><strong>{{ b.rival }}</strong> challenged you <span class="br-mode">{{ b.mode }}</span></div>
+    {% if b.their_finished %}<div class="br-note">They already scored <b>{{ b.their_score }}</b>. Beat it.</div>{% endif %}
+    <div class="br-actions">
+      <a class="btn small" href="{{ url_for('battle_page', battle_id=b.id) }}">Accept &amp; fight ⚔️</a>
+      <form method="post" action="{{ url_for('battle_decline', battle_id=b.id) }}">
+        <button type="submit" class="btn small ghost">Decline</button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<h2 class="section-title">Challenge a friend</h2>
+<form class="challenge-form" method="post" action="{{ url_for('arena_challenge') }}">
+  <div class="cf-input">
+    <span class="cf-at">@</span>
+    <input type="text" name="codename" placeholder="Friend's codename" maxlength="32" required autocomplete="off">
+  </div>
+  <div class="mode-row">
+    {% for key, m in modes.items() %}
+    <label class="mode-card">
+      <input type="radio" name="mode" value="{{ key }}" {{ 'checked' if key == 2 }}>
+      <span class="mc-body">
+        <strong>{{ '⚔️' * key }} {{ m.name }}</strong>
+        <small>{{ m.descr }}</small>
+      </span>
+    </label>
+    {% endfor %}
+  </div>
+  <button type="submit" class="btn big">Send challenge &amp; play your run →</button>
+  <p class="section-note small-note">Your friend sees the invite live next time they're online, and races your score.
+    Win: +{{ battle_cfg.xp.win }} XP &middot; Draw: +{{ battle_cfg.xp.draw }} &middot; Loss: +{{ battle_cfg.xp.loss }}.</p>
+</form>
+
+{% if lobby.active %}
+<h2 class="section-title">Battles in progress</h2>
+<div class="battle-list">
+  {% for b in lobby.active %}
+  <div class="battle-row">
+    <div class="br-vs">vs <strong>{{ b.rival }}</strong> <span class="br-mode">{{ b.mode }}</span></div>
+    <div class="br-score">{{ b.my_score }} <span>vs</span> {{ b.their_score if b.their_finished else '…' }}</div>
+    <div class="br-actions">
+      {% if not b.my_finished %}
+        <a class="btn small" href="{{ url_for('battle_page', battle_id=b.id) }}">Continue ▶</a>
+      {% else %}
+        <span class="br-note">Waiting for {{ b.rival }}…</span>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="arena-cols">
+  <div>
+    <h2 class="section-title">Leaderboard</h2>
+    {% if leaderboard %}
+    <ol class="leaderboard">
+      {% for r in leaderboard %}
+      <li class="{{ 'me' if r.name == profile.name }}" style="--i: {{ loop.index0 }}">
+        <span class="lb-rank">{{ ['🥇','🥈','🥉'][loop.index0] if loop.index0 < 3 else loop.index }}</span>
+        <span class="lb-name">{{ r.name }}</span>
+        <span class="lb-wins">{{ r.wins }}W / {{ r.played }}</span>
+      </li>
+      {% endfor %}
+    </ol>
+    {% else %}
+    <p class="section-note">No battles fought yet. Be the first name on the board.</p>
+    {% endif %}
+  </div>
+  <div>
+    <h2 class="section-title">Battle log</h2>
+    {% if lobby.history %}
+    <div class="battle-list compact">
+      {% for b in lobby.history[:10] %}
+      <a class="battle-row outcome-{{ b.outcome }}" href="{{ url_for('battle_page', battle_id=b.id) }}">
+        <div class="br-vs">vs <strong>{{ b.rival }}</strong></div>
+        <div class="br-score">{{ b.my_score }} <span>–</span> {{ b.their_score }}</div>
+        <div class="br-tag">{{ {'win':'VICTORY','loss':'DEFEAT','draw':'DRAW','declined':'DECLINED'}[b.outcome] }}</div>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="section-note">Your battle history will appear here.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

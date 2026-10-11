@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}{{ company.name }} Citadel &mdash; V.A.S.U.K.I.{% endblock %}
+{% block content %}
+<section class="drive-head" data-company="{{ company.name }}" data-tier="{{ tier.name }}"
+         data-stars="{{ tier.difficulty }}">
+  <p class="lore-year">Corporate Citadel &middot; Placement trial</p>
+  <h2>{{ company.name }} <span class="tier-badge tier-{{ company.tier }}">{{ tier.name }}</span></h2>
+  <p class="section-note">
+    {% if pattern == 'dsa' %}DSA pattern: {{ rounds_order|length - 1 }} MCQ sections + 3 coding problems in Python.
+    Coding problems earn partial credit per hidden test passed.
+    {% else %}MCQ pattern: {{ rounds_order|length }} sections, {{ questions|length }} questions.{% endif %}
+    Score 60% to breach this citadel. AI defence: {{ '★' * tier.difficulty }}</p>
+</section>
+<div class="drive-hud">
+  <div class="round-tracker" id="tracker">
+    {% for r in rounds_order %}
+      <button type="button" class="rt-step" data-round="{{ r }}"
+              title="{{ continents[round_continent[r]].name }}">{{ continents[round_continent[r]].icon }} {{ round_labels[r] }}</button>
+    {% endfor %}
+  </div>
+  <div class="hud-row">
+    <div class="xpbar slim"><div class="xpfill" id="driveProgress" style="width:0%"></div></div>
+    <span class="hud-count" id="hudCount">0/{{ questions|length }}</span>
+  </div>
+</div>
+
+<form method="post" action="{{ url_for('submit_drive', company_id=company.id) }}"
+      id="driveForm">
+  {% set ns = namespace(n=0) %}
+  {% for r in rounds_order %}
+    {% set round_qs = questions|selectattr('round', 'equalto', r)|list %}
+    {% if round_qs %}
+    {% set ns.n = ns.n + 1 %}
+    {% set land = continents[round_continent[r]] %}
+    <section class="round-panel continent-{{ round_continent[r] }}" data-round="{{ r }}"
+             data-continent="{{ land.name }}">
+      <div class="zone-banner">
+        <span class="zb-icon">{{ land.icon }}</span>
+        <div>
+          <small>Continent of {{ land.name }} &middot; {{ land.skill }}</small>
+          <h3 class="round-heading" data-round="{{ r }}">
+            <span class="rh-num">Zone {{ ns.n }}</span>
+            {{ round_labels[r] }}
+            <span class="rh-count">{{ round_qs|length }} {{ 'problems' if r == 'dsa' else 'challenges' }}</span>
+          </h3>
+        </div>
+      </div>
+      {% for q in round_qs %}
+      {% if q.kind == 'dsa' %}
+      <div class="qcard dsa-card" data-round="{{ q.round }}" data-qid="{{ q.id }}" data-func="{{ q.func }}"
+           data-run-url="{{ url_for('api_run_code', company_id=company.id) }}" data-store="drive-{{ company.id }}-{{ q.id }}">
+        {% set judge = False %}{% set pnum = loop.index %}{% include "_dsa_problem.html" %}
+      </div>
+      {% else %}
+      <div class="qcard" data-round="{{ q.round }}">
+        <p class="qprompt"><span class="qnum">Q{{ loop.index }}</span> {{ q.prompt }}</p>
+        <div class="qoptions">
+          {% for opt in q.options %}
+          <label class="opt">
+            <input type="radio" name="q_{{ q.id }}" value="{{ loop.index0 }}">
+            <span>{{ opt }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+      {% endfor %}
+    </section>
+    {% endif %}
+  {% endfor %}
+
+  <div class="round-nav">
+    <button type="button" class="btn ghost" id="prevRound">&larr; Previous zone</button>
+    <span class="round-pos" id="roundPos"></span>
+    <button type="button" class="btn" id="nextRound">Next zone &rarr;</button>
+  </div>
+
+  <div class="submit-row">
+    <button type="submit" class="btn big" id="submitBtn">Transmit Answers to V.A.S.U.K.I. →</button>
+    <a class="btn ghost" href="{{ url_for('world') }}">Disconnect</a>
+  </div>
+</form>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='drive.js') }}"></script>
+<script src="{{ url_for('static', filename='code.js') }}"></script>
+{% endblock %}

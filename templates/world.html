@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}The Neural World &mdash; V.A.S.U.K.I.{% endblock %}
+{% block content %}
+{% set threat = threat_for_level(profile.level) %}
+<section class="playerbar {{ 'critical' if threat.critical else '' }}">
+  <div class="pb-left">
+    <span class="pb-class">{{ threat.title }}</span>
+    <span class="pb-name">{{ profile.name }}</span>
+    <span class="pb-level">LVL {{ profile.level }}</span>
+  </div>
+  <div class="pb-xp">
+    <div class="xpbar"><div class="xpfill" style="width: {{ profile.progress_pct }}%"></div></div>
+    <span class="xp-text">{{ profile.xp }} XP &middot; {{ profile.xp_to_next }} to next level</span>
+  </div>
+  <div class="pb-threat">
+    <small>AI threat assessment</small>
+    <strong>{{ threat.status }}</strong>
+  </div>
+  <div class="pb-ach">🏆 {{ profile.achievements_earned }}/{{ profile.achievements_total }}</div>
+</section>
+
+<div class="world-intro">
+  <canvas class="core3d" data-size="190" data-mood="{{ 'hostile' if threat.critical else ('alert' if profile.level >= 3 else 'calm') }}"
+          aria-label="V.A.S.U.K.I.'s neural core"></canvas>
+  <div class="transmission compact" data-typewriter>
+    <p class="tx-head"><span class="tx-dot"></span> V.A.S.U.K.I.</p>
+    <p class="tx-body">
+      {%- if threat.critical -%}
+        You are classified as a SYSTEM THREAT. I cannot predict you. The Core Citadel is open &mdash; if you dare.
+      {%- elif profile.level >= 3 -%}
+        Your adaptability is... unexpected. I am recalibrating. The inner citadels will not be so forgiving.
+      {%- elif profile.xp > 0 -%}
+        I am learning from you, {{ profile.name }}. Every answer you give makes my model sharper.
+      {%- else -%}
+        Welcome, Human Candidate. Follow the path. Each citadel is a test. Are you still necessary?
+      {%- endif -%}
+    </p>
+    <div class="quick-actions">
+      <a class="btn small" href="{{ url_for('arena_page') }}">⚔️ Battle a friend</a>
+      <a class="btn small ghost" href="{{ url_for('prep_page') }}">📋 Practise topics</a>
+    </div>
+  </div>
+</div>
+
+<h2 class="section-title">The Path to the Core</h2>
+<p class="section-note">Tap a level. Service companies set MCQ papers; product companies add 3 DSA coding problems.
+  Earn up to 3 stars per citadel &mdash; 100% for three.</p>
+
+{% set total_stars = companies|sum(attribute='stars') %}
+<div class="map-stats">
+  <span>⭐ {{ total_stars }} / {{ companies|length * 3 }} stars</span>
+  <span>🏙️ {{ companies|selectattr('passed')|list|length }} / {{ companies|length }} breached</span>
+</div>
+
+{# Level path: nodes zig-zag down a winding road, Candy Crush style. #}
+{% set ns = namespace(current=None) %}
+{% for c in companies %}{% if ns.current is none and c.unlocked and not c.passed %}{% set ns.current = c.id %}{% endif %}{% endfor %}
+<div class="level-map" id="levelMap">
+  <svg class="map-road" aria-hidden="true"></svg>
+  {% for c in companies %}
+  {% set pos = ['p-c', 'p-r', 'p-c', 'p-l'][loop.index0 % 4] %}
+  <div class="level-row {{ pos }} continent-{{ ['aptara','codexia','glitchwild','technoria','citadels'][loop.index0 % 5] }}">
+    <button type="button"
+            class="level-node tier-{{ c.tier }} {{ 'locked' if not c.unlocked }} {{ 'done' if c.passed }} {{ 'current' if c.id == ns.current }} {{ 'boss' if loop.last }}"
+            data-level="{{ loop.index }}" data-name="{{ c.name }}" data-blurb="{{ c.blurb }}"
+            data-tier="{{ c.tier_name }} · {{ 'DSA + MCQ' if c.pattern == 'dsa' else 'MCQ paper' }}" data-stars="{{ c.stars }}" data-mult="{{ c.xp_mult }}"
+            data-difficulty="{{ c.difficulty }}" data-unlocked="{{ 1 if c.unlocked else 0 }}"
+            data-unlock="{{ c.unlock_level }}"
+            data-play="{{ url_for('start_drive', company_id=c.id) }}"
+            data-id="{{ c.id }}"
+            style="--i: {{ loop.index0 }}">
+      {% if c.id == ns.current %}<span class="you-are-here">YOU</span>{% endif %}
+      <span class="ln-pattern {{ c.pattern }}">{{ 'DSA' if c.pattern == 'dsa' else 'MCQ' }}</span>
+      <span class="ln-num">{{ '🔒' if not c.unlocked else ('👑' if loop.last else loop.index) }}</span>
+      <span class="ln-stars">{% for i in range(3) %}<i class="{{ 'on' if i < c.stars }}">★</i>{% endfor %}</span>
+    </button>
+    <span class="level-label">{{ c.name }}<small>{{ c.tier_name }} &middot; {{ 'DSA + MCQ' if c.pattern == 'dsa' else 'MCQ paper' }}</small></span>
+  </div>
+  {% endfor %}
+</div>
+
+{# Pop-up card for a tapped level #}
+<div class="level-sheet" id="levelSheet" hidden>
+  <div class="ls-card" role="dialog" aria-modal="true" aria-labelledby="lsName">
+    <button type="button" class="ls-close" aria-label="Close">✕</button>
+    <p class="ls-kicker">Level <span id="lsLevel"></span> &middot; <span id="lsTier"></span></p>
+    <h3 id="lsName"></h3>
+    <div class="ls-stars" id="lsStars"></div>
+    <p class="ls-blurb" id="lsBlurb"></p>
+    <div class="ls-meta"><span id="lsDiff"></span><span id="lsMult"></span></div>
+    <div class="ls-paper" id="lsPaper"></div>
+    <div class="ls-actions">
+      <a class="btn big" id="lsPlay" href="#">Play ▶</a>
+      <a class="btn ghost" href="{{ url_for('prep_page') }}">📋 Practise topics</a>
+    </div>
+    <p class="ls-locked" id="lsLocked" hidden></p>
+  </div>
+</div>
+<script id="companyBriefs" type="application/json">{{ briefs|tojson }}</script>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='map.js') }}"></script>
+{% endblock %}

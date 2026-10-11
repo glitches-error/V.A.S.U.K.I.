@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Prep &mdash; V.A.S.U.K.I.{% endblock %}
+{% block content %}
+<p class="lore-year">Training grounds &middot; Combined question pool</p>
+<h1 class="prep-title">Prep</h1>
+<p class="section-note">Practise any topic with questions pooled from every company's paper plus the general bank.
+  For one company's paper, tap its level on the <a class="inline-link" href="{{ url_for('world') }}">map</a>.</p>
+
+{% set quick = prep.focus|rejectattr('key', 'equalto', 'dsa')|first %}
+<section class="prep-summary">
+  <div class="readiness" style="--pct: {{ prep.overall }}">
+    <svg viewBox="0 0 120 120" aria-hidden="true">
+      <circle class="rd-bg" cx="60" cy="60" r="50"/>
+      <circle class="rd-fg" cx="60" cy="60" r="50"/>
+    </svg>
+    <div class="rd-num"><b><span data-count="{{ prep.overall }}">{{ prep.overall }}</span>%</b><small>overall</small></div>
+  </div>
+  <div class="ps-body">
+    <p class="ps-tier">Combined skill report &middot; drives + practice</p>
+    <p class="section-note">{{ prep.mastered }}/{{ prep.topics|length }} topics mastered &middot;
+      {{ prep.solved }}/{{ prep.problems|length }} DSA problems solved</p>
+    <p class="ps-focus"><strong>Focus next:</strong>
+      {% for t in prep.focus %}
+      <a class="pill focus-pill" href="{{ url_for('practice_page', topic=t.key) if t.key != 'dsa' else '#dsa-library' }}">{{ t.continent.icon }} {{ t.label }}</a>
+      {% endfor %}
+    </p>
+    <div class="ls-actions">
+      {% if quick %}<a class="btn" href="{{ url_for('practice_page', topic=quick.key) }}">⚡ Quick practice: {{ quick.label }}</a>{% endif %}
+      <a class="btn ghost" href="#dsa-library">⌨️ DSA library</a>
+    </div>
+  </div>
+</section>
+
+<h2 class="section-title">Topics</h2>
+<p class="section-note">Tap a topic to practise it. Each question is graded instantly and earns XP.</p>
+<div class="topic-grid">
+  {% for t in prep.topics if t.key != 'dsa' %}
+  <a class="topic-card status-{{ t.status }} continent-{{ t.continent_key }}" style="--i: {{ loop.index0 }}"
+     href="{{ url_for('practice_page', topic=t.key) }}">
+    <div class="tc-head">
+      <span class="m-icon">{{ t.continent.icon }}</span>
+      <div><strong>{{ t.label }}</strong><small>{{ t.continent.name }}</small></div>
+      <span class="m-status">{{ {'mastered':'MASTERED','weak':'WEAK','improving':'IMPROVING','untested':'NEW'}[t.status] }}</span>
+    </div>
+    <div class="m-bar"><div style="width: {{ t.accuracy or 0 }}%"></div></div>
+    <p class="m-acc">
+      {% if t.accuracy is not none %}{{ t.accuracy }}% over {{ t.answered }} answers{% else %}Not practised yet{% endif %}
+      &middot; {{ t.pool }} questions
+    </p>
+    {% if t.companies %}<p class="tc-companies">Asked by {{ t.companies|join(', ') }}</p>{% endif %}
+    <span class="tc-play">Practise ▶</span>
+  </a>
+  {% endfor %}
+</div>
+
+<h2 class="section-title" id="dsa-library">DSA library</h2>
+<p class="section-note">All {{ prep.problems|length }} coding problems in one place. First full solve of each earns +40 XP.</p>
+<div class="dsa-filter" role="tablist">
+  {% for f in ['All', 'Easy', 'Medium', 'Hard'] %}
+  <button type="button" class="prep-tab {{ 'active' if loop.first }}" data-level="{{ f }}">{{ f }}</button>
+  {% endfor %}
+</div>
+<div class="problem-list" id="problemList">
+  {% for p in prep.problems %}
+  <a class="problem-row {{ 'solved' if p.solved }}" data-level="{{ p.level }}" style="--i: {{ loop.index0 }}"
+     href="{{ url_for('practice_problem_page', problem_id=p.id) }}">
+    <span class="pr-check">{{ '✓' if p.solved else '' }}</span>
+    <strong>{{ p.title }}</strong>
+    <span class="dsa-level level-{{ p.level|lower }}">{{ p.level }}</span>
+    <span class="pr-topics">{% for t in p.topics %}<span class="pill">{{ t }}</span>{% endfor %}</span>
+    <span class="pr-src">{{ p.company }} style</span>
+  </a>
+  {% endfor %}
+</div>
+
+<h2 class="section-title">Study notes</h2>
+<div class="notes-grid">
+  {% for t in prep.topics %}
+  <details class="note continent-{{ t.continent_key }}">
+    <summary>{{ t.continent.icon }} {{ t.label }}</summary>
+    <ul class="m-tips">{% for tip in t.tips %}<li>{{ tip }}</li>{% endfor %}</ul>
+  </details>
+  {% endfor %}
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  // DSA library level filter
+  document.querySelectorAll(".dsa-filter .prep-tab").forEach(function (b) {
+    b.addEventListener("click", function () {
+      document.querySelectorAll(".dsa-filter .prep-tab").forEach(function (x) { x.classList.toggle("active", x === b); });
+      document.querySelectorAll(".problem-row").forEach(function (r) {
+        r.hidden = b.dataset.level !== "All" && r.dataset.level !== b.dataset.level;
+      });
+    });
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Practice: {{ topic.label }} &mdash; V.A.S.U.K.I.{% endblock %}
+{% block content %}
+<a class="back-link" href="{{ url_for('prep_page') }}">&larr; Prep</a>
+<section class="practice continent-{{ topic.continent_key }}" id="practice" data-topic="{{ topic.key }}">
+  <div class="zone-banner">
+    <span class="zb-icon">{{ topic.continent.icon }}</span>
+    <div>
+      <small>Practice &middot; {{ topic.continent.name }} &middot; combined pool of {{ topic.pool }}</small>
+      <h3 class="round-heading">{{ topic.label }}</h3>
+    </div>
+  </div>
+
+  <div class="practice-hud">
+    <span class="ph-stat"><b id="phCorrect">0</b><small>correct</small></span>
+    <span class="ph-stat"><b id="phStreak">0</b><small>streak</small></span>
+    <span class="ph-stat"><b id="phBest">0</b><small>best</small></span>
+    <span class="ph-stat"><b id="phXp">0</b><small>XP earned</small></span>
+  </div>
+
+  <div class="bq-card" id="pCard">
+    <p class="bq-zone" id="pSource"></p>
+    <p class="bq-prompt" id="pPrompt">Loading…</p>
+    <div class="bq-options" id="pOptions"></div>
+    <p class="bq-explain" id="pExplain" hidden></p>
+  </div>
+  <div class="practice-actions">
+    <button type="button" class="btn" id="pNext" hidden>Next question →</button>
+    <a class="btn ghost" href="{{ url_for('prep_page') }}">Finish</a>
+    <span class="section-note small-note">Keys: A–D to answer, Enter for next</span>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='practice.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}{{ q.title }} &mdash; Practice &mdash; V.A.S.U.K.I.{% endblock %}
+{% block content %}
+<a class="back-link" href="{{ url_for('prep_page') }}#dsa-library">&larr; DSA library</a>
+<section class="practice continent-codexia">
+  <div class="zone-banner">
+    <span class="zb-icon">⌨️</span>
+    <div>
+      <small>DSA practice &middot; {{ q.company }}-style problem {% if solved %}&middot; ✓ solved before{% endif %}</small>
+      <h3 class="round-heading">{{ q.title }}</h3>
+    </div>
+  </div>
+  <div class="qcard dsa-card {{ 'answered' if solved }}" data-qid="{{ q.id }}" data-func="{{ q.func }}"
+       data-run-url="{{ url_for('api_practice_run', problem_id=q.pid) }}"
+       data-submit-url="{{ url_for('api_practice_submit', problem_id=q.pid) }}"
+       data-store="practice-{{ q.pid }}">
+    {% set judge = True %}{% set pnum = None %}{% include "_dsa_problem.html" %}
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='code.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,31 @@
+{# Shared DSA problem body: statement, samples, editor, actions. Expects `q` (and optional `pnum`);
+   set `judge=True` to add the full-judge Submit button (practice). #}
+        <div class="dsa-head">
+          {% if pnum %}<span class="qnum">P{{ pnum }}</span>{% endif %}
+          <strong class="dsa-title">{{ q.title }}</strong>
+          <span class="dsa-level level-{{ q.level|lower }}">{{ q.level }}</span>
+          {% for t in q.topics %}<span class="pill">{{ t }}</span>{% endfor %}
+        </div>
+        <pre class="dsa-statement">{{ q.prompt }}</pre>
+        <div class="dsa-samples">
+          {% for s in q.samples %}
+          <div class="dsa-sample"><span>Sample {{ loop.index }}</span>
+            <code>{{ q.func }}({{ s.args|map('tojson')|join(', ') }})</code> &rarr; <code>{{ s.expected|tojson }}</code></div>
+          {% endfor %}
+          <p class="dsa-hidden">+ {{ q.hidden_count }} hidden tests on submit</p>
+        </div>
+        <div class="code-editor">
+          <div class="ce-bar"><span>solution.py</span><span class="ce-lang">Python 3</span></div>
+          <div class="ce-body">
+            <pre class="ce-gutter" aria-hidden="true">1</pre>
+            <textarea name="code_{{ q.id }}" class="ce-input" spellcheck="false" autocapitalize="off"
+                      autocomplete="off" wrap="off" aria-label="Your solution for {{ q.title }}">{{ q.starter }}</textarea>
+          </div>
+        </div>
+        <div class="dsa-actions">
+          <button type="button" class="btn small run-btn">▶ Run sample tests</button>
+          {% if judge %}<button type="button" class="btn small judge-btn">✔ Submit (all tests)</button>{% endif %}
+          <button type="button" class="btn small ghost reset-btn">Reset code</button>
+          <span class="run-status"></span>
+        </div>
+        <div class="run-output" hidden></div>

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Dossier: {{ profile.name }} &mdash; V.A.S.U.K.I.{% endblock %}
+{% block content %}
+{% set threat = threat_for_level(profile.level) %}
+<p class="lore-year">Candidate dossier &middot; Compiled by V.A.S.U.K.I.</p>
+<section class="playerbar {{ 'critical' if threat.critical else '' }}">
+  <div class="pb-left">
+    <span class="pb-class">{{ threat.title }}</span>
+    <span class="pb-name">{{ profile.name }}</span>
+    <span class="pb-level">LVL {{ profile.level }}</span>
+  </div>
+  <div class="pb-xp">
+    <div class="xpbar"><div class="xpfill" style="width: {{ profile.progress_pct }}%"></div></div>
+    <span class="xp-text">{{ profile.xp }} XP &middot; {{ profile.xp_to_next }} to next level</span>
+  </div>
+  <div class="pb-threat">
+    <small>AI threat assessment</small>
+    <strong>{{ threat.status }}</strong>
+  </div>
+</section>
+
+<h3 class="section-title">Anomalies Logged ({{ profile.achievements_earned }}/{{ profile.achievements_total }})</h3>
+<div class="ach-grid" data-stagger>
+  {% for a in profile.achievements %}
+  <div class="ach-card {{ 'earned' if a.earned else 'locked' }}">
+    <div class="ach-icon">{{ '🏆' if a.earned else '🔒' }}</div>
+    <div>
+      <p class="ach-title">{{ a.title }}</p>
+      <p class="ach-descr">{{ a.descr }}</p>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<h3 class="section-title">Trial Record</h3>
+{% if drives %}
+<table class="history">
+  <thead>
+    <tr><th>Citadel</th><th>Score</th><th>Outcome</th><th>XP</th><th>When</th></tr>
+  </thead>
+  <tbody>
+    {% for d in drives %}
+    <tr>
+      <td>{{ d.company }}</td>
+      <td>{{ d.score }}/{{ d.total }}</td>
+      <td>{{ 'Breached' if d.passed else 'Contained' }}</td>
+      <td>+{{ d.xp_gained }}</td>
+      <td>{{ d.played }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="section-note">No trials recorded. The AI is waiting &mdash; enter a Corporate Citadel.</p>
+{% endif %}
+{% endblock %}

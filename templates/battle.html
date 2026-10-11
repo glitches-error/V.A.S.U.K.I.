@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Battle vs {{ battle.rival.name }} &mdash; V.A.S.U.K.I.{% endblock %}
+{% block content %}
+<section class="battle" id="battle" data-id="{{ battle.id }}">
+  <div class="vs-bar">
+    <div class="fighter me">
+      <span class="f-name">{{ battle.me.name }}</span>
+      <span class="f-lives" id="myLives"></span>
+      <span class="f-score" id="myScore">{{ battle.me.score }}</span>
+    </div>
+    <div class="vs-core">
+      <canvas class="core3d" data-size="120" data-mood="alert" aria-hidden="true"></canvas>
+      <span class="vs-text">VS</span>
+    </div>
+    <div class="fighter rival">
+      <span class="f-name">{{ battle.rival.name }}</span>
+      <span class="f-lives" id="rivalLives"></span>
+      <span class="f-score" id="rivalScore">{{ battle.rival.score if battle.rival.finished else '?' }}</span>
+    </div>
+  </div>
+  <div class="tug" aria-hidden="true"><div class="tug-fill" id="tugFill"></div><span class="tug-knot" id="tugKnot"></span></div>
+  <p class="battle-mode">{{ battle.mode }} &middot; <span id="qPos"></span> &middot; <span id="ghostNote"></span></p>
+
+  <div class="combo-meter" id="comboMeter" hidden><span id="comboText"></span></div>
+
+  <div class="battle-stage" id="stage">
+    <div class="timer-ring" id="timerRing">
+      <svg viewBox="0 0 120 120"><circle class="tr-bg" cx="60" cy="60" r="52"/><circle class="tr-fg" id="timerArc" cx="60" cy="60" r="52"/></svg>
+      <span id="timerNum"></span>
+    </div>
+    <div class="bq-card" id="qCard">
+      <p class="bq-zone" id="qZone"></p>
+      <p class="bq-prompt" id="qPrompt"></p>
+      <div class="bq-options" id="qOptions"></div>
+      <p class="bq-explain" id="qExplain" hidden></p>
+    </div>
+  </div>
+
+  <div class="battle-end" id="endScreen" hidden>
+    <p class="be-kicker" id="endKicker"></p>
+    <h2 id="endTitle"></h2>
+    <div class="be-scores"><span id="endMine"></span><em>vs</em><span id="endTheirs"></span></div>
+    <p class="section-note" id="endNote"></p>
+    <div class="be-stats" id="endStats"></div>
+    <div class="result-actions">
+      <a class="btn" href="{{ url_for('arena_page') }}">Back to the Arena</a>
+      <a class="btn ghost" href="{{ url_for('world') }}">Map</a>
+    </div>
+  </div>
+</section>
+<script id="battleState" type="application/json">{{ battle|tojson }}</script>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='battle.js') }}"></script>
+{% endblock %}
